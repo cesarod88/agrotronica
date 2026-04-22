@@ -2,83 +2,61 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Hardware: IoT](https://img.shields.io/badge/Hardware-IoT-blue.svg)](#)
-[![AI: Computer Vision](https://img.shields.io/badge/AI-Computer%20Vision-green.svg)](#)
+[![Network: LoRaWAN](https://img.shields.io/badge/Network-LoRaWAN-orange.svg)](#)
 
-Este repositorio contiene la documentación técnica, firmware, esquemáticos de hardware y modelos de IA para un sistema de **Agrotrónica** distribuido. El proyecto integra tres sistemas IoT autónomos coordinados para la gestión eficiente de recursos hídricos y monitoreo de cultivos.
+Este repositorio contiene la arquitectura técnica, firmware y modelos de análisis para un ecosistema agrotrónico modular. El sistema gestiona tres cultivos específicos (Café, Lechuga, Tomate) mediante una red híbrida de sensores y actuadores.
 
 ---
 
 ## 🏗️ Arquitectura del Sistema
 
-El ecosistema se basa en una arquitectura de **Edge Computing** y **comunicaciones híbridas** (LoRaWAN/WiFi) para garantizar la operatividad en zonas rurales con conectividad limitada.
-
 ### 1. Nodo Café (Riego por Dispersión)
-* **Hardware:** Board de control personalizada (PCB) con regulador lineal **$7805$** y filtrado capacitivo.
-* **Sensores/Actuadores:** 4 sensores de humedad de suelo + 1 electroválvula de 12V.
-* **Infraestructura:** Interconexión mediante cableado **UTP Cat6** con conectores **RJ45** para transporte de señales analógicas y potencia.
-* **Alimentación:** Sistema fotovoltaico de 50W, regulador de carga de 12V y batería de respaldo de 2000mAh.
+* **Control:** PCB personalizada con regulador **$7805$** y filtrado robusto.
+* **Infraestructura:** Conectividad mediante **UTP/RJ45** para el transporte de señales de 4 sensores de humedad y activación de electroválvula de 12V.
+* **Energía:** Sistema fotovoltaico de 50W, batería de 2000mAh y regulador de 12V.
 
-### 2. Nodo Hidráulico (Gravedad & LoRa32)
-* **Controlador:** Heltec WiFi LoRa 32 V3.
-* **Gestión de Red:** Lógica de redundancia automática:
-    * **Primario:** WiFi -> Google Sheets.
-    * **Secundario:** LoRa -> **The Things Network (TTN)** -> Integración Webhook.
-* **Instrumentación:** Transductor de presión industrial ($0.5V$ - $4.5V$, $1.6 \text{ MPa}$).
+### 2. Nodo Hidráulico & Lechuga (Gravedad y Monitoreo Distribuidos)
+Este nodo gestiona el riego por gravedad (Goteo/Chorro) y el monitoreo de precisión en eras de lechuga.
+* **Control de Riego:** Heltec WiFi LoRa 32 V3 que monitorea un transductor de presión ($0.5V - 4.5V$, $1.6 \text{ MPa}$) y activa un relé de 5V.
+* **Red de Sensores (Cultivo de Lechuga):** * 6 Sensores **Makerfabs LoRaWAN** (Humedad de Suelo y Temperatura).
+    * Distribución en **2 eras** de cultivo.
+    * Autonomía: Baterías AAA con reporte cada 60 minutos.
+* **Flujo de Datos:** * Sensores -> TTN (The Things Network) -> Google Sheets (Consulta pública).
+    * **Redundancia:** El Heltec conmuta entre WiFi (directo a Sheets) y LoRa (vía TTN) según disponibilidad.
 
-### 3. Nodo Tomate (Edge IA & Estación Meteorológica)
-* **Procesamiento:** Raspberry Pi 4 (RPI4) con cámara oficial.
-* **Control de Potencia:** Activación de bomba de $127VAC$ mediante contactores en tablero eléctrico con protección termomagnética de $50A$.
-* **Integración Master:** Enlace vía LoRa con estación **Libelium Plug & Sense** (Viento y Lluvia).
-* **Inteligencia Artificial:** Implementación de modelos de visión artificial para monitoreo fenológico y detección de anomalías en el cultivo de tomate.
+### 3. Nodo Tomate (Edge IA & Potencia)
+* **Cerebro:** Raspberry Pi 4 con cámara integrada.
+* **Potencia:** Activación de bomba de $127VAC$ con protección termomagnética de $50A$.
+* **Interconexión:** Gateway para estación **Libelium Plug & Sense** (Viento y Lluvia) vía LoRa.
+* **IA:** Análisis de imágenes para la salud del cultivo de tomate.
+
+---
+
+## 📊 Visualización Avanzada (Dashboard)
+
+El sistema centraliza los datos en una aplicación interactiva con las siguientes capacidades:
+
+* **Mapa de Calor (Heat Map):** Generación en tiempo real de la distribución de humedad en el cultivo de lechuga basado en los 6 nodos Makerfabs. Permite identificar zonas de estrés hídrico o sobre-riego.
+* **Gestión Individual y Global:** Control manual de electroválvulas y bombas, además de modos automáticos basados en umbrales.
+* **Roles y Expertos:** Sistema de permisos para operarios, agrónomos y administradores de red.
 
 ---
 
 ## 🔒 Seguridad y Certificaciones
 
-Para cumplir con estándares industriales, el proyecto implementa:
-
-| Categoría | Estándar / Implementación |
+| Capa | Implementación |
 | :--- | :--- |
-| **Ciberseguridad** | Encriptación **AES-128** en LoRaWAN y **TLS 1.2/1.3** en peticiones HTTPS. |
-| **Firmware** | Estructura modular con **Watchdog Timer** y gestión de errores en tiempo real. |
-| **Hardware** | Diseño de PCB bajo norma **IPC-2221** con separación de planos analógicos y digitales. |
-| **Redes** | Segmentación de red y autenticación robusta para el Dashboard centralizado. |
+| **Ciberseguridad** | Encriptación **AES-128** en capas de red LoRaWAN y **TLS 1.3** para tráfico Web/WiFi. |
+| **Hardware** | Diseño de PCBs bajo normas **IPC-2221**; cableado UTP con blindaje para reducir ruido en señales analógicas. |
+| **Cómputo** | Procesamiento en el borde (Edge) en RPI4 para reducir latencia en la IA de visión. |
 
 ---
 
 ## 📂 Estructura del Repositorio
 
-├── /hardware           # Archivos de diseño (KiCad/Altium), BOM y Gerbers.
-├── /firmware           # Código fuente (C++ / MicroPython) para ESP32 y Heltec.
-├── /ia_vision          # Scripts de Python para inferencia en RPI4 (TensorFlow Lite).
-├── /dashboard          # Web App para la gestión centralizada e individual de nodos.
-└── /docs               # Manuales de usuario y diagramas de flujo hidráulico.
-
-👥 Gestión de Proyecto y Roles
-El desarrollo se fundamenta en un Liderazgo Activo y trabajo en equipo multidisciplinario:
-
-Project Lead / Architect: Coordinación técnica y visión macro del ecosistema.
-
-Firmware Engineer: Desarrollo de la lógica de control y pilas de comunicación.
-
-Hardware Engineer: Diseño de PCBs, dimensionamiento solar y gestión de potencia.
-
-Data & IA Specialist: Entrenamiento de modelos y gestión de bases de datos.
-
-Cybersecurity Auditor: Validación de integridad de red y protección de datos.
-
-🚀 Instalación Rápida
-Hardware: Ensamble las PCBs según el diagrama en /hardware/schematics.
-
-Firmware:
-
-Configurar credenciales en include/secrets.h.
-
-Compilar y subir usando PlatformIO.
-
-Dashboard:
-
-Desplegar el servicio en /dashboard y conectar con la API de Google Sheets y el Webhook de TTN.
-
-📄 Licencia
-Este proyecto es de código abierto bajo la licencia MIT.
+```text
+├── /hardware           # Esquemáticos (PCBs, Sensores Makerfabs, Conexiones RJ45)
+├── /firmware           # Código para Heltec, ESP32 y RPI4
+├── /cloud_integration  # Google Apps Scripts y Webhooks para TTN
+├── /dashboard          # App frontend (Visualización de Heat Maps y telemetría)
+└── /ai_vision          # Modelos de detección para el Nodo Tomate
